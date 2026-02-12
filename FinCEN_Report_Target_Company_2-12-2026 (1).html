@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='utf-8'>
+                    <title>FinCEN Report - Target Company</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 40px; max-width: 900px; margin: 0 auto; }
+                        h1, h2, h3 { color: #333; }
+                        .header-box { background: #fff3e0; padding: 20px; border-left: 4px solid #FF9800; margin: 20px 0; }
+                        .beneficial-owner { background: #e8f5e9; padding: 15px; border: 2px solid #4CAF50; margin: 10px 0; border-radius: 4px; }
+                        .non-beneficial { background: #f5f5f5; padding: 15px; border: 2px solid #ddd; margin: 10px 0; border-radius: 4px; }
+                        .org-chart { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; font-family: 'Courier New', monospace; white-space: pre-wrap; margin: 20px 0; border-radius: 4px; }
+                        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+                        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                        th { background: #f0f0f0; font-weight: bold; }
+                        .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #333; font-size: 12px; color: #666; }
+                        .page-break { page-break-after: always; }
+                        .print-btn { padding: 15px 30px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; margin: 10px 5px; }
+                        .print-btn:hover { background: #1976D2; }
+                        @media print { .no-print { display: none; } }
+                    </style>
+                </head>
+                <body onload="document.getElementById('printBtn').focus();">
+                    <h1>📄 FinCEN Beneficial Ownership Report</h1>
+                    
+                    <div class="header-box">
+                        <p><strong>Company:</strong> Target Company</p>
+                        <p><strong>Report Date:</strong> 2/12/2026</p>
+                        <p><strong>Compliance Status:</strong> <span style="font-weight: bold; font-size: 18px;">
+                            ⚠ NO BENEFICIAL OWNERS FOUND
+                        </span></p>
+                    </div>
+                    
+                    <h2>📊 Organizational Structure</h2>
+                    <div class="org-chart">Target Company [🎯 TARGET]
+</div>
+                    
+                    <h2>✅ FinCEN Compliance Summary</h2>
+                    <table>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                        </tr>
+                        <tr>
+                            <td>Total Individuals Analyzed</td>
+                            <td style="text-align: center; font-weight: bold;">0</td>
+                            <td style="text-align: center;">-</td>
+                        </tr>
+                        <tr>
+                            <td>Beneficial Owners (≥25%)</td>
+                            <td style="text-align: center; font-weight: bold;">0</td>
+                            <td style="text-align: center; color: orange; font-weight: bold;">
+                                ⚠ None Found
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>FinCEN Reporting Required</td>
+                            <td style="text-align: center; font-weight: bold;">REVIEW NEEDED</td>
+                            <td style="text-align: center;">-</td>
+                        </tr>
+                    </table>
+                    
+                    <div class="page-break"></div>
+                    
+                    <h2>👥 Individual Ownership Analysis</h2>
+                    
+                    
+                    
+                    
+                    <h2>🏢 Entity Details</h2>
+                    <table>
+                        <tr>
+                            <th>Entity Name</th>
+                            <th>Type</th>
+                            <th>Direct Owners</th>
+                        </tr>
+                        
+                                <tr>
+                                    <td><strong>Target Company</strong></td>
+                                    <td>Target Company</td>
+                                    <td>None</td>
+                                </tr>
+                            
+                    </table>
+                    
+                    <div class="footer">
+                        <h3>📋 About FinCEN Reporting Requirements</h3>
+                        <p><strong>Corporate Transparency Act (CTA):</strong> The Financial Crimes Enforcement Network (FinCEN) requires U.S. companies to report beneficial ownership information as part of anti-money laundering efforts.</p>
+                        
+                        <p><strong>Beneficial Owner Definition:</strong> An individual who, directly or indirectly:</p>
+                        <ul>
+                            <li>Exercises substantial control over the reporting company, OR</li>
+                            <li>Owns or controls at least 25% of the ownership interests of the reporting company</li>
+                        </ul>
+                        
+                        <p><strong>What Must Be Reported:</strong></p>
+                        <ul>
+                            <li>Full legal name</li>
+                            <li>Date of birth</li>
+                            <li>Current residential or business address</li>
+                            <li>Unique identifying number from acceptable ID (e.g., driver's license, passport)</li>
+                            <li>Image of the identification document</li>
+                        </ul>
+                        
+                        <p><strong>Filing Deadlines:</strong></p>
+                        <ul>
+                            <li>Companies created before 2024: File by January 1, 2025</li>
+                            <li>Companies created in 2024: File within 90 days of formation</li>
+                            <li>Companies created after 2024: File within 30 days of formation</li>
+                        </ul>
+                        
+                        <p><strong>Important:</strong> This calculator identifies individuals meeting the 25% ownership threshold. Additional beneficial owners may exist under the "substantial control" criteria. Consult with qualified legal counsel for complete compliance guidance.</p>
+                        
+                        <p style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;"><em>This report was generated by the FinCEN Beneficial Ownership Calculator on 2/12/2026. This tool is for informational purposes only and does not constitute legal advice. Always consult with qualified legal and tax professionals for compliance guidance specific to your situation.</em></p>
+                    </div>
+                    
+                    <div class="no-print" style="margin-top: 30px; text-align: center;">
+                        <button id="printBtn" onclick="window.print()" class="print-btn">
+                            🖨️ Print This Report
+                        </button>
+                        <p style="margin-top: 10px; color: #666;">Use Ctrl+P (Windows) or Cmd+P (Mac) to print or save as PDF</p>
+                        <p style="color: #999; font-size: 12px;">Choose "Save as PDF" in your print dialog to create a PDF file</p>
+                    </div>
+                </body>
+                </html>
+            
