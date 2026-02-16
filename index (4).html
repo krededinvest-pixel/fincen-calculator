@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FinCEN Beneficial Ownership Calculator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; background: #f5f5f5; }
+        .header { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; font-size: 14px; font-weight: bold; }
+        button:hover { opacity: 0.9; }
+        .btn-danger { background: #f44336; }
+        .btn-primary { background: #2196F3; }
+        .btn-purple { background: #9C27B0; }
+        .btn-orange { background: #FF9800; }
+        .btn-teal { background: #009688; }
+        input, select, textarea { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+        textarea { font-family: monospace; min-height: 100px; }
+        .entity-box { background: #fafafa; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
+        .result-box { padding: 15px; margin: 10px 0; border: 2px solid; border-radius: 4px; }
+        .beneficial { background: #e8f5e9; border-color: #4CAF50; }
+        .non-beneficial { background: #f5f5f5; border-color: #ddd; }
+        .owner-name { font-size: 20px; font-weight: bold; }
+        .percentage { font-size: 24px; color: #2196F3; font-weight: bold; }
+        h1, h2 { color: #333; margin-top: 0; }
+        .compliance-badge { display: inline-block; padding: 10px 20px; border-radius: 4px; font-weight: bold; margin: 10px 0; }
+        .compliance-pass { background: #4CAF50; color: white; }
+        .compliance-warn { background: #FF9800; color: white; }
+        .alert { padding: 15px; margin: 15px 0; border-radius: 4px; border-left: 4px solid; }
+        .alert-info { background: #e3f2fd; border-color: #2196F3; }
+        .alert-success { background: #e8f5e9; border-color: #4CAF50; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 10% auto; padding: 30px; border-radius: 8px; max-width: 600px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        @media (max-width: 768px) { .grid-3 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏢 FinCEN Beneficial Ownership Calculator</h1>
+        <p>Calculate beneficial ownership for Corporate Transparency Act (CTA) compliance</p>
+        
+        <div class="action-buttons">
+            <button onclick="loadExample1()" class="btn-primary">📊 Load Example 1</button>
+            <button onclick="loadExample2()" class="btn-primary">📊 Load Example 2</button>
+            <button onclick="showSaveDialog()" class="btn-teal">💾 Save & Share</button>
+            <button onclick="showLoadDialog()" class="btn-teal">📂 Load Data</button>
+            <button onclick="downloadBackup()" class="btn-primary">⬇️ Download Backup</button>
+            <button onclick="exportToWord()" class="btn-purple">📄 Export Report</button>
+        </div>
+    </div>
+
+    <!-- Save/Share Modal -->
+    <div id="saveModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSaveDialog()">&times;</span>
+            <h2>💾 Save & Share Your Data</h2>
+            <p>Copy this code and save it somewhere safe (email it to yourself, save in a document, etc.)</p>
+            <p><strong>To share:</strong> Send this code to others. They can paste it in "Load Data".</p>
+            <textarea id="saveCode" readonly onclick="this.select()"></textarea>
+            <button onclick="copySaveCode()" style="width: 100%; margin-top: 10px;">📋 Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <!-- Load Modal -->
+    <div id="loadModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeLoadDialog()">&times;</span>
+            <h2>📂 Load Data</h2>
+            <p>Paste the code you saved or received from someone:</p>
+            <textarea id="loadCode" placeholder="Paste your code here..."></textarea>
+            <button onclick="loadData()" style="width: 100%; margin-top: 10px;">✓ Load Data</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="alert alert-info">
+            <strong>📋 How to Use:</strong>
+            <ol style="margin: 10px 0 0 20px;">
+                <li>Add all entities (companies/LLCs)</li>
+                <li>Add ownership relationships (who owns what %)</li>
+                <li>Add officers/controllers (CEO, CFO, etc.)</li>
+                <li>Save your work using "Save & Share" button</li>
+                <li>Share the code with your attorney/accountant</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📊 FinCEN Compliance Summary</h2>
+        <div id="complianceSummary"></div>
+    </div>
+
+    <div class="section">
+        <h2>🏢 Entities</h2>
+        <button onclick="addEntity()">+ Add Entity</button>
+        <div id="entitiesList"></div>
+    </div>
+
+    <div class="section">
+        <h2>🔗 Ownership Relationships</h2>
+        <button onclick="addOwnership()">+ Add Ownership</button>
+        <div id="ownershipList"></div>
+    </div>
+
+    <div class="section">
+        <h2>👔 Substantial Control Persons (Officers/Controllers)</h2>
+        <div class="alert alert-info">
+            <strong>ℹ️ Important:</strong> Beneficial owners include individuals with substantial control, even with 0% ownership. Add all senior officers (CEO, CFO, COO, President, General Counsel).
+        </div>
+        <button onclick="addControlPerson()">+ Add Control Person</button>
+        <div id="controlPersonsList"></div>
+    </div>
+
+    <div class="section">
+        <h2>👥 Beneficial Ownership Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let entities = [{id: 1, name: 'Target Company', isTarget: true}];
+        let owners = [];
+        let controlPersons = [];
+        let nextEntityId = 2;
+        let nextOwnerId = 1;
+        let nextControlId = 1;
+
+        function addEntity() {
+            entities.push({id: nextEntityId, name: 'Entity ' + nextEntityId, isTarget: false});
+            nextEntityId++;
+            render();
+        }
+
+        function deleteEntity(id) {
+            if (entities.find(e => e.id === id).isTarget) {
+                alert('Cannot delete target company');
+                return;
+            }
+            entities = entities.filter(e => e.id !== id);
+            owners = owners.filter(o => o.ownedEntityId !== id && o.ownerId !== id);
+            render();
+        }
+
+        function updateEntity(id, name) {
+            let entity = entities.find(e => e.id === id);
+            if (entity) entity.name = name;
+            render();
+        }
+
+        function addOwnership() {
+            owners.push({
+                id: nextOwnerId++,
+                ownerType: 'individual',
+                ownerName: '',
+                ownerId: null,
+                ownedEntityId: 1,
+                percentage: 0
+            });
+            render();
+        }
+
+        function deleteOwnership(id) {
+            owners = owners.filter(o => o.id !== id);
+            render();
+        }
+
+        function updateOwnership(id, field, value) {
+            let owner = owners.find(o => o.id === id);
+            if (owner) {
+                owner[field] = value;
+                if (field === 'ownerType' && value === 'individual') {
+                    owner.ownerId = null;
+                }
+            }
+            render();
+        }
+
+        function addControlPerson() {
+            controlPersons.push({
+                id: nextControlId++,
+                name: '',
+                title: '',
+                entityId: 1,
+                controlType: 'senior_officer'
+            });
+            render();
+        }
+
+        function deleteControlPerson(id) {
+            controlPersons = controlPersons.filter(c => c.id !== id);
+            render();
+        }
+
+        function updateControlPerson(id, field, value) {
+            let person = controlPersons.find(c => c.id === id);
+            if (person) person[field] = value;
+            render();
+        }
+
+        function calculateBeneficialOwnership() {
+            let individuals = new Set();
+            owners.forEach(o => {
+                if (o.ownerType === 'individual' && o.ownerName) {
+                    individuals.add(o.ownerName);
+                }
+            });
+
+            let results = [];
+            
+            individuals.forEach(name => {
+                let total = calculateIndirectOwnership(name, 1);
+                results.push({
+                    name: name,
+                    percentage: total,
+                    isBeneficial: total >= 25,
+                    reason: total >= 25 ? 'Owns ≥25%' : 'Below 25% threshold',
+                    type: 'ownership'
+                });
+            });
+
+            controlPersons.forEach(person => {
+                if (person.name && person.entityId === 1) {
+                    let existing = results.find(r => r.name === person.name);
+                    if (existing) {
+                        existing.isBeneficial = true;
+                        existing.reason = existing.percentage >= 25 ? 
+                            'Owns ≥25% AND Substantial Control' : 
+                            'Substantial Control (' + person.title + ')';
+                        existing.title = person.title;
+                        existing.controlType = person.controlType;
+                    } else {
+                        results.push({
+                            name: person.name,
+                            percentage: 0,
+                            isBeneficial: true,
+                            reason: 'Substantial Control (' + person.title + ')',
+                            type: 'control',
+                            title: person.title,
+                            controlType: person.controlType
+                        });
+                    }
+                }
+            });
+
+            return results.sort((a, b) => {
+                if (a.isBeneficial !== b.isBeneficial) return b.isBeneficial - a.isBeneficial;
+                return b.percentage - a.percentage;
+            });
+        }
+
+        function calculateIndirectOwnership(individualName, targetEntityId) {
+            let total = 0;
+
+            function findPaths(entityId, multiplier) {
+                let entityOwners = owners.filter(o => o.ownedEntityId === entityId);
+                
+                entityOwners.forEach(owner => {
+                    let newMultiplier = multiplier * (owner.percentage / 100);
+                    
+                    if (owner.ownerType === 'individual' && owner.ownerName === individualName) {
+                        total += newMultiplier * 100;
+                    } else if (owner.ownerType === 'entity' && owner.ownerId) {
+                        findPaths(owner.ownerId, newMultiplier);
+                    }
+                });
+            }
+
+            findPaths(targetEntityId, 1);
+            return total;
+        }
+
+        function render() {
+            renderEntities();
+            renderOwnership();
+            renderControlPersons();
+            renderResults();
+            renderCompliance();
+        }
+
+        function renderEntities() {
+            let html = '';
+            entities.forEach(e => {
+                let entityOwners = owners.filter(o => o.ownedEntityId === e.id);
+                let total = entityOwners.reduce((sum, o) => sum + parseFloat(o.percentage || 0), 0);
+                
+                html += `
+                    <div class="entity-box">
+                        <input type="text" value="${e.name}" onchange="updateEntity(${e.id}, this.value)" />
+                        ${e.isTarget ? '<span style="color: blue; font-weight: bold;">🎯 TARGET COMPANY</span>' : 
+                          `<button onclick="deleteEntity(${e.id})" class="btn-danger">Delete</button>`}
+                        ${entityOwners.length > 0 ? `<div style="margin-top: 10px; font-size: 12px; color: #666;">
+                            <strong>Owned by (${total.toFixed(1)}% total):</strong> ${entityOwners.map(o => {
+                            let ownerName = o.ownerType === 'individual' ? o.ownerName : entities.find(e => e.id === o.ownerId)?.name;
+                            return `${ownerName || '?'} (${o.percentage}%)`;
+                        }).join(', ')}</div>` : ''}
+                    </div>
+                `;
+            });
+            document.getElementById('entitiesList').innerHTML = html;
+        }
+
+        function renderOwnership() {
+            let html = '';
+            owners.forEach(o => {
+                html += `
+                    <div class="entity-box">
+                        <div class="grid-3" style="align-items: end;">
+                            <div>
+                                <label><strong>Owner Type:</strong></label>
+                                <select onchange="updateOwnership(${o.id}, 'ownerType', this.value)">
+                                    <option value="individual" ${o.ownerType === 'individual' ? 'selected' : ''}>Individual</option>
+                                    <option value="entity" ${o.ownerType === 'entity' ? 'selected' : ''}>Entity</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label><strong>${o.ownerType === 'individual' ? 'Name:' : 'Entity:'}</strong></label>
+                                ${o.ownerType === 'individual' ? 
+                                    `<input type="text" value="${o.ownerName}" onchange="updateOwnership(${o.id}, 'ownerName', this.value)" placeholder="John Doe" />` :
+                                    `<select onchange="updateOwnership(${o.id}, 'ownerId', parseInt(this.value))">
+                                        <option value="">Select...</option>
+                                        ${entities.filter(e => e.id !== o.ownedEntityId).map(e => 
+                                            `<option value="${e.id}" ${o.ownerId === e.id ? 'selected' : ''}>${e.name}</option>`
+                                        ).join('')}
+                                    </select>`
+                                }
+                            </div>
+                            <div>
+                                <label><strong>Owns:</strong></label>
+                                <select onchange="updateOwnership(${o.id}, 'ownedEntityId', parseInt(this.value))">
+                                    ${entities.map(e => 
+                                        `<option value="${e.id}" ${o.ownedEntityId === e.id ? 'selected' : ''}>${e.name}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+                            <div style="flex: 1;">
+                                <label><strong>Percentage:</strong></label>
+                                <input type="number" value="${o.percentage}" onchange="updateOwnership(${o.id}, 'percentage', parseFloat(this.value))" min="0" max="100" step="0.1" />
+                            </div>
+                            <button onclick="deleteOwnership(${o.id})" class="btn-danger">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('ownershipList').innerHTML = html || '<p style="color: #999;">No ownership relationships yet.</p>';
+        }
+
+        function renderControlPersons() {
+            let html = '';
+            
+            controlPersons.forEach(c => {
+                html += `
+                    <div class="entity-box">
+                        <div class="grid-3" style="align-items: end;">
+                            <div>
+                                <label><strong>Name:</strong></label>
+                                <input type="text" value="${c.name}" onchange="updateControlPerson(${c.id}, 'name', this.value)" placeholder="Jane Smith" />
+                            </div>
+                            <div>
+                                <label><strong>Title/Position:</strong></label>
+                                <input type="text" value="${c.title}" onchange="updateControlPerson(${c.id}, 'title', this.value)" placeholder="CEO, CFO, etc." />
+                            </div>
+                            <div>
+                                <label><strong>Type of Control:</strong></label>
+                                <select onchange="updateControlPerson(${c.id}, 'controlType', this.value)">
+                                    <option value="senior_officer" ${c.controlType === 'senior_officer' ? 'selected' : ''}>Senior Officer</option>
+                                    <option value="key_decision_maker" ${c.controlType === 'key_decision_maker' ? 'selected' : ''}>Key Decision Maker</option>
+                                    <option value="board_member" ${c.controlType === 'board_member' ? 'selected' : ''}>Board Member</option>
+                                    <option value="other_control" ${c.controlType === 'other_control' ? 'selected' : ''}>Other Control</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                            <div style="font-size: 12px; color: #666; font-style: italic;">
+                                ${c.name ? `${c.name} - ${c.title || 'No title'} (Control Person)` : 'Complete this entry'}
+                            </div>
+                            <button onclick="deleteControlPerson(${c.id})" class="btn-danger">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('controlPersonsList').innerHTML = html || '<p style="color: #999;">No control persons added. Add CEO, CFO, etc. here.</p>';
+        }
+
+        function renderResults() {
+            let results = calculateBeneficialOwnership();
+            let html = '';
+            if (results.length === 0) {
+                html = '<p style="color: #999;">Add individuals to see results.</p>';
+            } else {
+                results.forEach(r => {
+                    html += `
+                        <div class="result-box ${r.isBeneficial ? 'beneficial' : 'non-beneficial'}">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="flex: 1;">
+                                    <div class="owner-name">${r.type === 'control' ? '👔' : '👤'} ${r.name}</div>
+                                    ${r.title ? `<div style="font-size: 14px; color: #666; margin-top: 3px;">${r.title}</div>` : ''}
+                                    <div style="margin-top: 8px;">
+                                        ${r.isBeneficial ? 
+                                            `<span style="background: #4CAF50; color: white; padding: 5px 15px; border-radius: 4px; font-size: 12px; font-weight: bold;">✓ BENEFICIAL OWNER</span>
+                                            <div style="margin-top: 5px; font-size: 13px; color: #666;">${r.reason}</div>` : 
+                                            `<div style="color: #999; font-size: 14px;">${r.reason}</div>`
+                                        }
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="percentage">${r.percentage.toFixed(2)}%</div>
+                                    <div style="font-size: 12px; color: #666;">Ownership</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('results').innerHTML = html;
+        }
+
+        function renderCompliance() {
+            let results = calculateBeneficialOwnership();
+            let beneficialOwners = results.filter(r => r.isBeneficial);
+            let targetCompany = entities.find(e => e.isTarget);
+            
+            let html = `
+                <div style="background: ${beneficialOwners.length > 0 ? '#e8f5e9' : '#fff3e0'}; padding: 20px; border-radius: 8px; border: 2px solid ${beneficialOwners.length > 0 ? '#4CAF50' : '#FF9800'};">
+                    <h3 style="margin-top: 0;">Company: ${targetCompany.name}</h3>
+                    <div class="compliance-badge ${beneficialOwners.length > 0 ? 'compliance-pass' : 'compliance-warn'}">
+                        ${beneficialOwners.length > 0 ? '✓ BENEFICIAL OWNERS IDENTIFIED' : '⚠ NO BENEFICIAL OWNERS'}
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <p><strong>📊 Total Individuals:</strong> ${results.length}</p>
+                        <p><strong>✓ Beneficial Owners:</strong> ${beneficialOwners.length}</p>
+                        <p><strong>📋 Must Report to FinCEN:</strong> ${beneficialOwners.length > 0 ? 'Yes' : 'Review Required'}</p>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('complianceSummary').innerHTML = html;
+        }
+
+        // Save & Load Functions
+        function showSaveDialog() {
+            let data = {
+                entities: entities,
+                owners: owners,
+                controlPersons: controlPersons,
+                nextEntityId: nextEntityId,
+                nextOwnerId: nextOwnerId,
+                nextControlId: nextControlId
+            };
+            let code = btoa(JSON.stringify(data));
+            document.getElementById('saveCode').value = code;
+            document.getElementById('saveModal').style.display = 'block';
+        }
+
+        function closeSaveDialog() {
+            document.getElementById('saveModal').style.display = 'none';
+        }
+
+        function copySaveCode() {
+            let codeField = document.getElementById('saveCode');
+            codeField.select();
+            document.execCommand('copy');
+            alert('✓ Code copied to clipboard!\n\nSave this code or send it to others to share your ownership structure.');
+        }
+
+        function showLoadDialog() {
+            document.getElementById('loadModal').style.display = 'block';
+        }
+
+        function closeLoadDialog() {
+            document.getElementById('loadModal').style.display = 'none';
+        }
+
+        function loadData() {
+            let code = document.getElementById('loadCode').value.trim();
+            if (!code) {
+                alert('Please paste a code first');
+                return;
+            }
+            
+            try {
+                let data = JSON.parse(atob(code));
+                entities = data.entities;
+                owners = data.owners;
+                controlPersons = data.controlPersons || [];
+                nextEntityId = data.nextEntityId;
+                nextOwnerId = data.nextOwnerId;
+                nextControlId = data.nextControlId || 1;
+                
+                render();
+                closeLoadDialog();
+                alert('✓ Data loaded successfully!');
+            } catch(e) {
+                alert('❌ Error: Invalid code. Please check and try again.');
+                console.error(e);
+            }
+        }
+
+        function downloadBackup() {
+            let data = {
+                entities: entities,
+                owners: owners,
+                controlPersons: controlPersons,
+                nextEntityId: nextEntityId,
+                nextOwnerId: nextOwnerId,
+                nextControlId: nextControlId
+            };
+            let json = JSON.stringify(data, null, 2);
+            let blob = new Blob([json], {type: 'application/json'});
+            let url = URL.createObjectURL(blob);
+            let link = document.createElement('a');
+            link.href = url;
+            link.download = 'fincen_backup_' + new Date().toISOString().split('T')[0] + '.json';
+            link.click();
+            URL.revokeObjectURL(url);
+            alert('✓ Backup downloaded!\n\nYou can load this file by opening it and copying the contents into "Load Data".');
+        }
+
+        function exportToWord() {
+            alert('Export feature will download a Word document...');
+            // Export functionality here
+        }
+
+        function loadExample1() {
+            entities = [
+                {id: 1, name: 'Target Company', isTarget: true},
+                {id: 2, name: 'Holding Company LLC', isTarget: false}
+            ];
+            owners = [
+                {id: 1, ownerType: 'individual', ownerName: 'John Smith', ownerId: null, ownedEntityId: 2, percentage: 60},
+                {id: 2, ownerType: 'individual', ownerName: 'Jane Doe', ownerId: null, ownedEntityId: 2, percentage: 40},
+                {id: 3, ownerType: 'entity', ownerName: '', ownerId: 2, ownedEntityId: 1, percentage: 50}
+            ];
+            controlPersons = [
+                {id: 1, name: 'Michael Chen', title: 'CEO', entityId: 1, controlType: 'senior_officer'}
+            ];
+            nextEntityId = 3;
+            nextOwnerId = 4;
+            nextControlId = 2;
+            render();
+        }
+
+        function loadExample2() {
+            entities = [
+                {id: 1, name: 'Target Company', isTarget: true},
+                {id: 2, name: 'Alpha Holdings LLC', isTarget: false}
+            ];
+            owners = [
+                {id: 1, ownerType: 'entity', ownerName: '', ownerId: 2, ownedEntityId: 1, percentage: 40},
+                {id: 2, ownerType: 'individual', ownerName: 'Alice Johnson', ownerId: null, ownedEntityId: 2, percentage: 80}
+            ];
+            controlPersons = [
+                {id: 1, name: 'Thomas Anderson', title: 'CEO', entityId: 1, controlType: 'senior_officer'},
+                {id: 2, name: 'Maria Garcia', title: 'CFO', entityId: 1, controlType: 'senior_officer'}
+            ];
+            nextEntityId = 3;
+            nextOwnerId = 3;
+            nextControlId = 3;
+            render();
+        }
+
+        // Initialize
+        render();
+    </script>
+</body>
+</html>
